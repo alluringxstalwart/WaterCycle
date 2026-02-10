@@ -22,6 +22,75 @@
               border-top-color: #64b5f6; border-radius: 50%;
               animation: spin 0.9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Controls help overlay */
+    #controls-help {
+      position: fixed; bottom: 16px; left: 16px; z-index: 9000;
+      background: rgba(13, 27, 42, 0.88);
+      border: 1px solid rgba(100, 181, 246, 0.3);
+      border-radius: 12px; padding: 14px 18px;
+      font-family: 'Segoe UI', system-ui, sans-serif; color: #c8dff0;
+      font-size: 0.82rem; line-height: 1.7;
+      max-width: 280px;
+      backdrop-filter: blur(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    #controls-help.hidden {
+      opacity: 0; transform: translateY(20px); pointer-events: none;
+    }
+    #controls-help h3 {
+      margin: 0 0 8px; font-size: 0.95rem; color: #64b5f6; letter-spacing: 1px;
+    }
+    #controls-help kbd {
+      display: inline-block; background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+      padding: 1px 6px; font-family: monospace; font-size: 0.78rem;
+      margin: 0 2px; color: #e8f0fa;
+    }
+    #controls-help .section { margin-bottom: 6px; }
+    #controls-help .section-title {
+      color: #90caf9; font-weight: 600; font-size: 0.78rem;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    #controls-help .close-btn {
+      position: absolute; top: 8px; right: 12px;
+      background: none; border: none; color: #90caf9; cursor: pointer;
+      font-size: 1.1rem; padding: 0; line-height: 1;
+    }
+    #controls-help .close-btn:hover { color: #fff; }
+    #controls-toggle {
+      position: fixed; bottom: 16px; left: 16px; z-index: 8999;
+      background: rgba(13, 27, 42, 0.8); border: 1px solid rgba(100, 181, 246, 0.3);
+      border-radius: 8px; padding: 8px 14px; color: #90caf9; cursor: pointer;
+      font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.82rem;
+      display: none;
+    }
+    #controls-toggle:hover { background: rgba(30, 60, 100, 0.8); color: #fff; }
+
+    /* Info popup */
+    #info-popup {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 9500; background: rgba(13, 27, 42, 0.94);
+      border: 1px solid rgba(100, 181, 246, 0.4); border-radius: 16px;
+      padding: 24px 32px; max-width: 420px; color: #e0f0ff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: auto;
+    }
+    #info-popup.hidden {
+      opacity: 0; transform: translate(-50%, -50%) scale(0.9);
+      pointer-events: none;
+    }
+    #info-popup h2 { margin: 0 0 12px; color: #64b5f6; font-size: 1.3rem; }
+    #info-popup p  { margin: 0; font-size: 0.95rem; line-height: 1.6; color: #c8dff0; }
+    #info-popup .close-popup {
+      position: absolute; top: 12px; right: 16px;
+      background: none; border: none; color: #90caf9; cursor: pointer;
+      font-size: 1.3rem; padding: 0; line-height: 1;
+    }
+    #info-popup .close-popup:hover { color: #fff; }
   </style>
 </head>
 <body>
@@ -32,15 +101,93 @@
     <div class="loader"></div>
   </div>
 
+  <!-- Controls help -->
+  <div id="controls-help">
+    <button class="close-btn" onclick="toggleControls(false)">×</button>
+    <h3>🎮 Controls</h3>
+    <div class="section">
+      <div class="section-title">Desktop</div>
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move<br>
+      <kbd>←</kbd><kbd>→</kbd> Turn &nbsp;|&nbsp; Mouse: Look<br>
+      Click on labels for more info
+    </div>
+    <div class="section">
+      <div class="section-title">🎮 Gamepad (Desktop)</div>
+      Left stick: Move &nbsp;|&nbsp; Right stick: Turn
+    </div>
+    <div class="section">
+      <div class="section-title">🥽 Meta Quest 3S</div>
+      Left 🕹️ Move &nbsp;|&nbsp; Right 🕹️ Snap Turn<br>
+      Trigger: Select &nbsp;|&nbsp; Hand tracking supported
+    </div>
+  </div>
+  <button id="controls-toggle" onclick="toggleControls(true)">🎮 Controls</button>
+
+  <!-- Info popup -->
+  <div id="info-popup" class="hidden">
+    <button class="close-popup" onclick="closeInfoPopup()">×</button>
+    <h2 id="popup-title"></h2>
+    <p id="popup-text"></p>
+  </div>
+
   <script>
     /* ================================================================ */
-    /*  HELPERS                                                         */
+    /*  UI HELPERS                                                      */
+    /* ================================================================ */
+    function toggleControls(show) {
+      var help = document.getElementById('controls-help');
+      var btn = document.getElementById('controls-toggle');
+      if (show) {
+        help.classList.remove('hidden');
+        btn.style.display = 'none';
+      } else {
+        help.classList.add('hidden');
+        btn.style.display = 'block';
+      }
+    }
+
+    var infoData = {
+      'collection': {
+        title: '💧 Collection',
+        text: 'Water collects in oceans, lakes, rivers, and underground aquifers. About 97% of Earth\'s water is in the oceans. Lakes and rivers hold only about 0.3% of all fresh water!'
+      },
+      'evaporation': {
+        title: '⬆️ Evaporation',
+        text: 'The Sun heats water, turning it into invisible water vapor that rises into the atmosphere. About 90% of evaporation comes from oceans. Plants also release water vapor through transpiration!'
+      },
+      'condensation': {
+        title: '☁️ Condensation',
+        text: 'As water vapor rises and cools, it condenses around tiny dust particles to form water droplets. Billions of these droplets together make clouds! Temperature drops about 6.5°C per 1000m of altitude.'
+      },
+      'precipitation': {
+        title: '⬇️ Precipitation',
+        text: 'When cloud droplets combine and become heavy enough, they fall as precipitation — rain, snow, sleet, or hail. An average raindrop falls at about 14 mph (22 km/h)!'
+      },
+      'runoff': {
+        title: '🌊 Runoff',
+        text: 'Water flows over land surfaces back into rivers, lakes, and oceans. Some water seeps underground to become groundwater. Mountains and slopes channel water into streams and rivers!'
+      }
+    };
+
+    function showInfoPopup(key) {
+      var data = infoData[key];
+      if (!data) return;
+      document.getElementById('popup-title').textContent = data.title;
+      document.getElementById('popup-text').textContent = data.text;
+      document.getElementById('info-popup').classList.remove('hidden');
+    }
+    function closeInfoPopup() {
+      document.getElementById('info-popup').classList.add('hidden');
+    }
+
+    /* ================================================================ */
+    /*  UTILITY                                                         */
     /* ================================================================ */
     function rand(a, b) { return Math.random() * (b - a) + a; }
     function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
 
     /* ================================================================ */
-    /*  CUSTOM COMPONENTS                                               */
+    /*  CUSTOM VISUAL COMPONENTS                                        */
     /* ================================================================ */
 
     /* ── Animated water surface ────────────────────────────────────── */
@@ -103,170 +250,164 @@
         if (!dt) return;
         var d = this.data;
         var sec = dt / 1000;
-        var ts = t / 1000;
+        var time = t / 1000;
         for (var i = 0; i < this.particles.length; i++) {
           var p = this.particles[i];
           p.y += p.speed * sec;
-          var progress = (p.y - d.minY) / (d.maxY - d.minY);
-          var scale = p.size * (1 + progress * 2.5);
-          p.mesh.scale.setScalar(scale);
-          p.mesh.material.opacity = Math.max(0, 0.45 * (1 - progress * progress));
-          var wobX = Math.sin(ts * p.wobbleSpeed + p.phase) * p.wobbleAmp;
-          var wobZ = Math.cos(ts * p.wobbleSpeed * 0.7 + p.phase) * p.wobbleAmp * 0.6;
-          p.mesh.position.set(p.baseX + wobX, p.y, p.baseZ + wobZ);
-          if (p.y >= d.maxY) {
+          if (p.y > d.maxY) {
             p.y = d.minY;
             var angle = rand(0, Math.PI * 2);
             var r = rand(0.3, d.radius);
             p.baseX = Math.cos(angle) * r;
             p.baseZ = Math.sin(angle) * r;
-            p.speed = rand(d.speed * 0.4, d.speed * 1.8);
           }
+          var wobX = Math.sin(time * p.wobbleSpeed + p.phase) * p.wobbleAmp;
+          var wobZ = Math.cos(time * p.wobbleSpeed * 0.7 + p.phase) * p.wobbleAmp * 0.6;
+          p.mesh.position.set(p.baseX + wobX, p.y, p.baseZ + wobZ);
+          var progress = (p.y - d.minY) / (d.maxY - d.minY);
+          var scale = p.size * (1 + progress * 1.5);
+          p.mesh.scale.setScalar(scale);
+          p.mesh.material.opacity = 0.45 * (1 - progress * 0.7);
         }
       }
     });
 
-    /* ── Rain system (realistic falling drops with splashes) ───────── */
+    /* ── Rain with splash pool ─────────────────────────────────────── */
     AFRAME.registerComponent('rain-system', {
       schema: {
-        count: { type: 'int', default: 120 },
-        areaX: { default: 14 },
-        areaZ: { default: 14 },
-        minY: { default: 0.05 },
+        count: { type: 'int', default: 150 },
+        areaX: { default: 10 },
+        areaZ: { default: 10 },
+        minY: { default: 0 },
         maxY: { default: 10 },
-        speed: { default: 8 }
+        speed: { default: 7 }
       },
       init: function () {
         this.drops = [];
+        this.splashes = [];
         var d = this.data;
         var group = new THREE.Group();
-        var geom = new THREE.CylinderGeometry(0.008, 0.015, 0.35, 4);
-        var mat = new THREE.MeshStandardMaterial({
-          color: 0x88bbee, transparent: true, opacity: 0.45,
-          roughness: 0.1, metalness: 0.3, depthWrite: false
+        var dropGeom = new THREE.CylinderGeometry(0.008, 0.008, 0.35, 3);
+        var dropMat = new THREE.MeshBasicMaterial({
+          color: 0x90caf9, transparent: true, opacity: 0.55
         });
         for (var i = 0; i < d.count; i++) {
-          var mesh = new THREE.Mesh(geom, mat.clone());
-          var drop = {
+          var mesh = new THREE.Mesh(dropGeom, dropMat.clone());
+          var dr = {
             mesh: mesh,
             x: rand(-d.areaX / 2, d.areaX / 2),
-            z: rand(-d.areaZ / 2, d.areaZ / 2),
             y: rand(d.minY, d.maxY),
-            speed: rand(d.speed * 0.6, d.speed * 1.4),
-            opacity: rand(0.25, 0.55)
+            z: rand(-d.areaZ / 2, d.areaZ / 2),
+            speed: rand(d.speed * 0.7, d.speed * 1.3)
           };
-          mesh.position.set(drop.x, drop.y, drop.z);
-          mesh.material.opacity = drop.opacity;
+          mesh.position.set(dr.x, dr.y, dr.z);
           group.add(mesh);
-          this.drops.push(drop);
+          this.drops.push(dr);
         }
-        this.el.setObject3D('rain', group);
-
-        // Splash rings
-        this.splashes = [];
-        var ringGeom = new THREE.RingGeometry(0.01, 0.08, 8);
-        var ringMat = new THREE.MeshStandardMaterial({
-          color: 0xaaddff, transparent: true, opacity: 0.5,
-          roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: false
+        var splashGeom = new THREE.RingGeometry(0.02, 0.06, 8);
+        var splashMat = new THREE.MeshBasicMaterial({
+          color: 0xbbdefb, transparent: true, opacity: 0, side: THREE.DoubleSide,
+          depthWrite: false
         });
-        this.splashGroup = new THREE.Group();
         for (var j = 0; j < 20; j++) {
-          var ring = new THREE.Mesh(ringGeom.clone(), ringMat.clone());
+          var ring = new THREE.Mesh(splashGeom.clone(), splashMat.clone());
           ring.rotation.x = -Math.PI / 2;
+          ring.position.set(0, 0.06, 0);
           ring.visible = false;
-          this.splashGroup.add(ring);
+          group.add(ring);
           this.splashes.push({ mesh: ring, life: 0, active: false });
         }
-        this.el.setObject3D('splashes', this.splashGroup);
+        this.el.setObject3D('rain', group);
         this.splashIdx = 0;
-      },
-      spawnSplash: function(x, z) {
-        var s = this.splashes[this.splashIdx];
-        s.mesh.position.set(x, 0.08, z);
-        s.mesh.scale.setScalar(0.3);
-        s.mesh.material.opacity = 0.5;
-        s.mesh.visible = true;
-        s.life = 0; s.active = true;
-        this.splashIdx = (this.splashIdx + 1) % this.splashes.length;
       },
       tick: function (t, dt) {
         if (!dt) return;
-        var d = this.data;
         var sec = dt / 1000;
+        var d = this.data;
         for (var i = 0; i < this.drops.length; i++) {
-          var p = this.drops[i];
-          p.y -= p.speed * sec;
-          if (p.y <= d.minY) {
-            if (Math.random() < 0.3) this.spawnSplash(p.x, p.z);
-            p.y = d.maxY + rand(0, 2);
-            p.x = rand(-d.areaX / 2, d.areaX / 2);
-            p.z = rand(-d.areaZ / 2, d.areaZ / 2);
+          var dr = this.drops[i];
+          dr.y -= dr.speed * sec;
+          if (dr.y < d.minY) {
+            var s = this.splashes[this.splashIdx % this.splashes.length];
+            s.mesh.position.set(dr.x, 0.06, dr.z);
+            s.mesh.visible = true;
+            s.mesh.scale.set(1, 1, 1);
+            s.mesh.material.opacity = 0.6;
+            s.life = 0;
+            s.active = true;
+            this.splashIdx++;
+            dr.y = d.maxY;
+            dr.x = rand(-d.areaX / 2, d.areaX / 2);
+            dr.z = rand(-d.areaZ / 2, d.areaZ / 2);
           }
-          p.mesh.position.set(p.x, p.y, p.z);
+          dr.mesh.position.set(dr.x, dr.y, dr.z);
         }
         for (var j = 0; j < this.splashes.length; j++) {
-          var s = this.splashes[j];
-          if (!s.active) continue;
-          s.life += sec;
-          var progress = s.life / 0.5;
-          if (progress >= 1) { s.active = false; s.mesh.visible = false; continue; }
-          s.mesh.scale.setScalar(0.3 + progress * 2);
-          s.mesh.material.opacity = 0.5 * (1 - progress);
+          var sp = this.splashes[j];
+          if (!sp.active) continue;
+          sp.life += sec;
+          if (sp.life > 0.5) {
+            sp.active = false;
+            sp.mesh.visible = false;
+          } else {
+            var prog = sp.life / 0.5;
+            sp.mesh.scale.set(1 + prog * 3, 1 + prog * 3, 1);
+            sp.mesh.material.opacity = 0.6 * (1 - prog);
+          }
         }
       }
     });
 
-    /* ── Gentle floating for clouds ────────────────────────────────── */
+    /* ── Cloud float ───────────────────────────────────────────────── */
     AFRAME.registerComponent('cloud-float', {
       schema: {
         amplitude: { default: 0.3 },
-        speed: { default: 0.3 },
-        driftX: { default: 0.1 },
+        speed: { default: 0.2 },
+        driftX: { default: 0.05 },
         offset: { default: 0 }
       },
       init: function () {
-        var pos = this.el.getAttribute('position');
-        this.baseY = pos.y;
-        this.baseX = pos.x;
+        var p = this.el.getAttribute('position');
+        this.basePos = { x: p.x, y: p.y, z: p.z };
       },
       tick: function (t) {
         var d = this.data;
-        var ts = t / 1000;
-        var pos = this.el.getAttribute('position');
-        var newY = this.baseY + Math.sin(ts * d.speed + d.offset) * d.amplitude;
-        var newX = this.baseX + Math.sin(ts * d.driftX + d.offset * 2) * 0.3;
-        this.el.setAttribute('position', { x: newX, y: newY, z: pos.z });
+        var s = t / 1000 + d.offset;
+        var y = this.basePos.y + Math.sin(s * d.speed) * d.amplitude;
+        var x = this.basePos.x + Math.sin(s * d.speed * 0.4) * d.driftX * 5;
+        this.el.setAttribute('position', { x: x, y: y, z: this.basePos.z });
       }
     });
 
-    /* ── Volumetric cloud builder ──────────────────────────────────── */
+    /* ── Volumetric cloud mesh ─────────────────────────────────────── */
     AFRAME.registerComponent('cloud-mesh', {
       schema: {
         scale: { default: 1 },
-        density: { type: 'int', default: 12 },
+        density: { type: 'int', default: 14 },
         darkBottom: { default: true }
       },
       init: function () {
-        var group = new THREE.Group();
         var d = this.data;
+        var group = new THREE.Group();
+        var geom = new THREE.SphereGeometry(1, 10, 8);
         for (var i = 0; i < d.density; i++) {
-          var r = rand(0.4, 1.1) * d.scale;
-          var geom = new THREE.SphereGeometry(r, 12, 8);
-          var brightness = d.darkBottom ? rand(0.88, 1) : 1;
-          var col = new THREE.Color(brightness, brightness, brightness);
           var mat = new THREE.MeshStandardMaterial({
-            color: col, roughness: 1, metalness: 0,
-            transparent: true, opacity: rand(0.82, 0.95),
-            depthWrite: false
+            color: 0xffffff, roughness: 1, metalness: 0,
+            transparent: true, opacity: rand(0.7, 0.92), depthWrite: false
           });
           var mesh = new THREE.Mesh(geom, mat);
+          var sx = rand(0.6, 1.4) * d.scale;
+          var sy = rand(0.3, 0.7) * d.scale;
+          var sz = rand(0.6, 1.2) * d.scale;
+          mesh.scale.set(sx, sy, sz);
           mesh.position.set(
             rand(-1.5, 1.5) * d.scale,
-            rand(-0.2, 0.7) * d.scale + (i === 0 ? 0 : rand(-0.1, 0.4)),
-            rand(-0.6, 0.6) * d.scale
+            rand(-0.2, 0.5) * d.scale,
+            rand(-0.8, 0.8) * d.scale
           );
-          if (d.darkBottom && mesh.position.y < 0.2 * d.scale) {
-            mesh.material.color.setRGB(0.82, 0.84, 0.88);
+          if (d.darkBottom && mesh.position.y < 0) {
+            mat.color.setHex(0xd0d0d0);
+            mat.opacity = rand(0.5, 0.7);
           }
           group.add(mesh);
         }
@@ -274,114 +415,90 @@
       }
     });
 
-    /* ── Sun glow & pulse ──────────────────────────────────────────── */
+    /* ── Sun glow effect ───────────────────────────────────────────── */
     AFRAME.registerComponent('sun-glow', {
       init: function () {
         var group = new THREE.Group();
-        var layers = [
-          { r: 1.8, opacity: 0.12, color: 0xfff176 },
-          { r: 2.5, opacity: 0.06, color: 0xffe082 },
-          { r: 3.5, opacity: 0.03, color: 0xffcc80 }
-        ];
-        layers.forEach(function(l) {
-          var geom = new THREE.SphereGeometry(l.r, 16, 12);
+        var sizes = [1.8, 2.5, 3.5];
+        var opacities = [0.15, 0.08, 0.04];
+        var geom = new THREE.SphereGeometry(1, 16, 12);
+        for (var i = 0; i < sizes.length; i++) {
           var mat = new THREE.MeshBasicMaterial({
-            color: l.color, transparent: true, opacity: l.opacity,
+            color: 0xfff176, transparent: true, opacity: opacities[i],
             depthWrite: false, side: THREE.BackSide
           });
-          group.add(new THREE.Mesh(geom, mat));
+          var mesh = new THREE.Mesh(geom, mat);
+          mesh.scale.setScalar(sizes[i]);
+          group.add(mesh);
+        }
+        var rayGeom = new THREE.PlaneGeometry(0.15, 5);
+        var rayMat = new THREE.MeshBasicMaterial({
+          color: 0xfff9c4, transparent: true, opacity: 0.06,
+          depthWrite: false, side: THREE.DoubleSide
         });
-        for (var i = 0; i < 8; i++) {
-          var rayGeom = new THREE.PlaneGeometry(0.15, 2.5);
-          var rayMat = new THREE.MeshBasicMaterial({
-            color: 0xffe082, transparent: true, opacity: 0.15,
-            depthWrite: false, side: THREE.DoubleSide
-          });
-          var ray = new THREE.Mesh(rayGeom, rayMat);
-          ray.rotation.z = (i / 8) * Math.PI;
+        for (var r = 0; r < 8; r++) {
+          var ray = new THREE.Mesh(rayGeom, rayMat.clone());
+          ray.rotation.z = (r / 8) * Math.PI;
           group.add(ray);
         }
         this.el.setObject3D('glow', group);
+        this.group = group;
+        this.time = 0;
       },
-      tick: function (t) {
-        var s = 1 + Math.sin(t / 1200) * 0.06;
-        var glow = this.el.getObject3D('glow');
-        if (glow) glow.scale.setScalar(s);
-        var mesh = this.el.getObject3D('mesh');
-        if (mesh) {
-          var ps = 1 + Math.sin(t / 800) * 0.03;
-          mesh.scale.setScalar(ps);
-        }
+      tick: function (t, dt) {
+        if (!dt) return;
+        this.time += dt / 1000;
+        var pulse = 1 + Math.sin(this.time * 0.5) * 0.05;
+        this.group.scale.setScalar(pulse);
       }
     });
 
-    /* ── Procedural low-poly tree ──────────────────────────────────── */
+    /* ── Procedural tree ───────────────────────────────────────────── */
     AFRAME.registerComponent('tree', {
       schema: {
         trunkHeight: { default: 2 },
-        trunkRadius: { default: 0.15 },
         crownType: { default: 'round' },
         crownColor: { default: '#2e7d32' },
-        crownSize: { default: 1.2 }
+        crownSize: { default: 1 }
       },
       init: function () {
         var d = this.data;
         var group = new THREE.Group();
-        // Trunk
-        var trunkGeom = new THREE.CylinderGeometry(d.trunkRadius * 0.6, d.trunkRadius, d.trunkHeight, 6);
+        var trunkGeom = new THREE.CylinderGeometry(0.08, 0.12, d.trunkHeight, 6);
         var trunkMat = new THREE.MeshStandardMaterial({
-          color: 0x5d4037, roughness: 0.9, metalness: 0.05
+          color: 0x5d4037, roughness: 0.9, metalness: 0.05, flatShading: true
         });
         var trunk = new THREE.Mesh(trunkGeom, trunkMat);
         trunk.position.y = d.trunkHeight / 2;
         trunk.castShadow = true;
         group.add(trunk);
-
-        var crownY = d.trunkHeight;
-        var color = new THREE.Color(d.crownColor);
-
+        var crownMat = new THREE.MeshStandardMaterial({
+          color: d.crownColor, roughness: 0.85, metalness: 0, flatShading: true
+        });
+        var crown;
         if (d.crownType === 'round') {
-          var sizes = [d.crownSize, d.crownSize * 0.8, d.crownSize * 0.7];
-          var offsets = [[0, 0, 0], [0.3, 0.3, 0.2], [-0.3, 0.2, -0.1]];
-          for (var i = 0; i < 3; i++) {
-            var sg = new THREE.SphereGeometry(sizes[i], 8, 6);
-            var sm = new THREE.MeshStandardMaterial({
-              color: color.clone().offsetHSL(0, 0, rand(-0.05, 0.05)),
-              roughness: 0.85, metalness: 0
-            });
-            var sphere = new THREE.Mesh(sg, sm);
-            sphere.position.set(offsets[i][0], crownY + sizes[i] * 0.6 + offsets[i][1], offsets[i][2]);
-            sphere.castShadow = true;
-            group.add(sphere);
-          }
+          crown = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(d.crownSize, 1), crownMat
+          );
+          crown.position.y = d.trunkHeight + d.crownSize * 0.5;
+          crown.castShadow = true;
+          group.add(crown);
         } else if (d.crownType === 'cone') {
-          var coneG = new THREE.ConeGeometry(d.crownSize, d.crownSize * 2.5, 6);
-          var coneM = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0 });
-          var cone = new THREE.Mesh(coneG, coneM);
-          cone.position.y = crownY + d.crownSize * 1.2;
-          cone.castShadow = true;
-          group.add(cone);
-          var cone2G = new THREE.ConeGeometry(d.crownSize * 0.7, d.crownSize * 1.8, 6);
-          var cone2M = new THREE.MeshStandardMaterial({
-            color: color.clone().offsetHSL(0.02, 0, 0.05), roughness: 0.8, metalness: 0
-          });
-          var cone2 = new THREE.Mesh(cone2G, cone2M);
-          cone2.position.y = crownY + d.crownSize * 2.2;
-          cone2.castShadow = true;
-          group.add(cone2);
-        } else if (d.crownType === 'layered') {
-          for (var j = 0; j < 3; j++) {
-            var lr = d.crownSize * (1 - j * 0.25);
-            var lh = d.crownSize * 0.6;
-            var layerG = new THREE.ConeGeometry(lr, lh, 7);
-            var layerM = new THREE.MeshStandardMaterial({
-              color: color.clone().offsetHSL(0, 0, j * 0.04),
-              roughness: 0.8, metalness: 0
-            });
-            var layer = new THREE.Mesh(layerG, layerM);
-            layer.position.y = crownY + j * lh * 0.65 + lr * 0.3;
-            layer.castShadow = true;
-            group.add(layer);
+          crown = new THREE.Mesh(
+            new THREE.ConeGeometry(d.crownSize * 0.7, d.crownSize * 2.5, 6), crownMat
+          );
+          crown.position.y = d.trunkHeight + d.crownSize * 0.8;
+          crown.castShadow = true;
+          group.add(crown);
+        } else {
+          for (var layer = 0; layer < 3; layer++) {
+            var s = d.crownSize * (1 - layer * 0.25);
+            var lMesh = new THREE.Mesh(
+              new THREE.ConeGeometry(s * 0.7, s * 1.2, 6), crownMat.clone()
+            );
+            lMesh.position.y = d.trunkHeight + layer * s * 0.7;
+            lMesh.castShadow = true;
+            group.add(lMesh);
           }
         }
         this.el.setObject3D('tree', group);
@@ -390,21 +507,20 @@
 
     /* ── Procedural rock ───────────────────────────────────────────── */
     AFRAME.registerComponent('rock', {
-      schema: { size: { default: 0.5 }, color: { default: '#757575' } },
+      schema: { size: { default: 0.3 }, color: { default: '#888888' } },
       init: function () {
-        var d = this.data;
-        var geom = new THREE.DodecahedronGeometry(d.size, 0);
+        var geom = new THREE.DodecahedronGeometry(this.data.size, 0);
         var pos = geom.attributes.position;
         for (var i = 0; i < pos.count; i++) {
           pos.setXYZ(i,
-            pos.getX(i) * rand(0.8, 1.2),
-            pos.getY(i) * rand(0.7, 1.1),
-            pos.getZ(i) * rand(0.8, 1.2)
+            pos.getX(i) + rand(-0.05, 0.05) * this.data.size,
+            pos.getY(i) + rand(-0.05, 0.05) * this.data.size,
+            pos.getZ(i) + rand(-0.05, 0.05) * this.data.size
           );
         }
         geom.computeVertexNormals();
         var mat = new THREE.MeshStandardMaterial({
-          color: d.color, roughness: 0.95, metalness: 0.05, flatShading: true
+          color: this.data.color, roughness: 0.9, metalness: 0.1, flatShading: true
         });
         var mesh = new THREE.Mesh(geom, mat);
         mesh.castShadow = true; mesh.receiveShadow = true;
@@ -412,161 +528,165 @@
       }
     });
 
-    /* ── Mountain mesh (low-poly) ──────────────────────────────────── */
+    /* ── Procedural mountain with snow ─────────────────────────────── */
     AFRAME.registerComponent('mountain', {
       schema: {
-        radius: { default: 6 }, height: { default: 10 },
-        segments: { type: 'int', default: 6 },
-        snowLine: { default: 0.7 }, color: { default: '#5f7a61' }
+        radius: { default: 6 },
+        height: { default: 10 },
+        segments: { type: 'int', default: 7 },
+        snowLine: { default: 0.7 },
+        color: { default: '#5f7a61' }
       },
       init: function () {
         var d = this.data;
         var group = new THREE.Group();
-        var geom = new THREE.ConeGeometry(d.radius, d.height, d.segments);
+        var geom = new THREE.ConeGeometry(d.radius, d.height, d.segments, 3);
         var pos = geom.attributes.position;
         for (var i = 0; i < pos.count; i++) {
           var y = pos.getY(i);
-          if (y < d.height * 0.4) {
-            pos.setX(i, pos.getX(i) * rand(0.85, 1.15));
-            pos.setZ(i, pos.getZ(i) * rand(0.85, 1.15));
-          }
+          var factor = (y < 0) ? 0.6 : 0.25;
+          pos.setXYZ(i,
+            pos.getX(i) + rand(-d.radius * factor * 0.15, d.radius * factor * 0.15),
+            pos.getY(i),
+            pos.getZ(i) + rand(-d.radius * factor * 0.15, d.radius * factor * 0.15)
+          );
         }
         geom.computeVertexNormals();
         var mat = new THREE.MeshStandardMaterial({
-          color: d.color, roughness: 0.9, metalness: 0.05, flatShading: true
+          color: d.color, roughness: 0.95, metalness: 0, flatShading: true
         });
-        var mtn = new THREE.Mesh(geom, mat);
-        mtn.position.y = d.height / 2;
-        mtn.castShadow = true; mtn.receiveShadow = true;
-        group.add(mtn);
-
-        // Snow cap
+        var mountain = new THREE.Mesh(geom, mat);
+        mountain.position.y = d.height / 2;
+        mountain.castShadow = true; mountain.receiveShadow = true;
+        group.add(mountain);
         var snowH = d.height * (1 - d.snowLine);
         var snowR = d.radius * (1 - d.snowLine) * 1.15;
-        var snowGeom = new THREE.ConeGeometry(snowR, snowH, d.segments);
-        var snowPos = snowGeom.attributes.position;
-        for (var j = 0; j < snowPos.count; j++) {
-          snowPos.setX(j, snowPos.getX(j) * rand(0.9, 1.1));
-          snowPos.setZ(j, snowPos.getZ(j) * rand(0.9, 1.1));
+        var snowGeom = new THREE.ConeGeometry(snowR, snowH, d.segments, 1);
+        var sp = snowGeom.attributes.position;
+        for (var j = 0; j < sp.count; j++) {
+          sp.setXYZ(j,
+            sp.getX(j) + rand(-snowR * 0.08, snowR * 0.08),
+            sp.getY(j),
+            sp.getZ(j) + rand(-snowR * 0.08, snowR * 0.08)
+          );
         }
         snowGeom.computeVertexNormals();
         var snowMat = new THREE.MeshStandardMaterial({
-          color: 0xf0f4f8, roughness: 0.7, metalness: 0.1, flatShading: true
+          color: 0xf5f5f5, roughness: 0.6, metalness: 0.05, flatShading: true
         });
         var snow = new THREE.Mesh(snowGeom, snowMat);
         snow.position.y = d.height * d.snowLine + snowH / 2;
         group.add(snow);
-
         this.el.setObject3D('mountain', group);
       }
     });
 
-    /* ── River/stream on ground ────────────────────────────────────── */
+    /* ── River (tube along curve) ──────────────────────────────────── */
     AFRAME.registerComponent('river', {
-      schema: { width: { default: 0.6 }, points: { default: '' } },
+      schema: {
+        width: { default: 0.4 },
+        points: { type: 'string', default: '0,0|5,5' }
+      },
       init: function () {
         var d = this.data;
-        var pts = d.points.split(';').map(function(p) {
-          var xy = p.trim().split(',');
-          return new THREE.Vector3(parseFloat(xy[0]), 0.06, parseFloat(xy[1]));
+        var pts = d.points.split('|').map(function (s) {
+          var xy = s.trim().split(',').map(Number);
+          return new THREE.Vector3(xy[0], 0.06, xy[1]);
         });
-        if (pts.length < 2) return;
+        if (pts.length < 2) { console.warn('river: need at least 2 points'); return; }
         var curve = new THREE.CatmullRomCurve3(pts);
-        var tubeGeom = new THREE.TubeGeometry(curve, 30, d.width / 2, 6, false);
+        var geom = new THREE.TubeGeometry(curve, 32, d.width / 2, 6, false);
         var mat = new THREE.MeshStandardMaterial({
-          color: 0x2196f3, roughness: 0.2, metalness: 0.3,
+          color: 0x1565c0, roughness: 0.2, metalness: 0.4,
           transparent: true, opacity: 0.75
         });
-        var mesh = new THREE.Mesh(tubeGeom, mat);
+        var mesh = new THREE.Mesh(geom, mat);
         this.el.setObject3D('river', mesh);
       }
     });
 
-    /* ── 3D cycle arrow ────────────────────────────────────────────── */
+    /* ── Cycle flow arrow (bezier tube + arrowhead) ────────────────── */
     AFRAME.registerComponent('cycle-arrow', {
       schema: {
-        from: { type: 'vec3' }, to: { type: 'vec3' },
-        color: { default: '#29b6f6' }, midHeight: { default: 2 }
+        from: { type: 'vec3', default: { x: 0, y: 0, z: 0 } },
+        to: { type: 'vec3', default: { x: 0, y: 5, z: 0 } },
+        color: { default: '#29b6f6' },
+        midHeight: { default: 3 }
       },
       init: function () {
         var d = this.data;
+        var start = new THREE.Vector3(d.from.x, d.from.y, d.from.z);
+        var end = new THREE.Vector3(d.to.x, d.to.y, d.to.z);
         var mid = new THREE.Vector3(
           (d.from.x + d.to.x) / 2,
           Math.max(d.from.y, d.to.y) + d.midHeight,
           (d.from.z + d.to.z) / 2
         );
-        var curve = new THREE.QuadraticBezierCurve3(
-          new THREE.Vector3(d.from.x, d.from.y, d.from.z), mid,
-          new THREE.Vector3(d.to.x, d.to.y, d.to.z)
-        );
-        var tubeGeom = new THREE.TubeGeometry(curve, 20, 0.05, 6, false);
+        var curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+        var tubeGeom = new THREE.TubeGeometry(curve, 24, 0.06, 5, false);
         var mat = new THREE.MeshStandardMaterial({
-          color: d.color, roughness: 0.5, metalness: 0.2,
-          transparent: true, opacity: 0.7
+          color: d.color, roughness: 0.5, metalness: 0.3,
+          transparent: true, opacity: 0.7, depthWrite: false
         });
-        this.el.setObject3D('arrow-path', new THREE.Mesh(tubeGeom, mat));
-        // Arrowhead
-        var dir = curve.getTangentAt(1).normalize();
-        var coneGeom = new THREE.ConeGeometry(0.15, 0.4, 6);
-        var coneMat = new THREE.MeshStandardMaterial({
-          color: d.color, roughness: 0.5, metalness: 0.2,
-          transparent: true, opacity: 0.8
+        var tube = new THREE.Mesh(tubeGeom, mat);
+        this.el.setObject3D('arrow-path', tube);
+        var arrowGeom = new THREE.ConeGeometry(0.15, 0.35, 6);
+        var arrowMat = new THREE.MeshStandardMaterial({
+          color: d.color, roughness: 0.4, metalness: 0.3
         });
-        var cone = new THREE.Mesh(coneGeom, coneMat);
-        cone.position.copy(new THREE.Vector3(d.to.x, d.to.y, d.to.z));
-        var quat = new THREE.Quaternion();
-        quat.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
-        cone.setRotationFromQuaternion(quat);
-        this.el.setObject3D('arrow-head', cone);
+        var arrow = new THREE.Mesh(arrowGeom, arrowMat);
+        var tangent = curve.getTangent(1);
+        arrow.position.copy(end);
+        arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+        this.el.setObject3D('arrow-head', arrow);
       }
     });
 
-    /* ── Glass label panel ─────────────────────────────────────────── */
+    /* ── Glass panel for labels ────────────────────────────────────── */
     AFRAME.registerComponent('glass-panel', {
       schema: {
-        width: { default: 2 }, height: { default: 0.5 },
-        color: { default: '#ffffff' }, opacity: { default: 0.55 }
+        width: { default: 3 },
+        height: { default: 0.5 },
+        color: { default: '#e3f2fd' },
+        opacity: { default: 0.5 }
       },
       init: function () {
         var d = this.data;
-        var geom = new THREE.PlaneGeometry(d.width, d.height, 1, 1);
-        // rounded corners via shape
-        var mat = new THREE.MeshStandardMaterial({
-          color: d.color, transparent: true, opacity: d.opacity,
-          roughness: 0.1, metalness: 0.3, side: THREE.DoubleSide,
-          depthWrite: false
-        });
-        var mesh = new THREE.Mesh(geom, mat);
-        var edges = new THREE.EdgesGeometry(geom);
-        var line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
-          color: 0x90caf9, transparent: true, opacity: 0.4
-        }));
         var group = new THREE.Group();
-        group.add(mesh); group.add(line);
-        this.el.setObject3D('panel', group);
+        var planeGeom = new THREE.PlaneGeometry(d.width, d.height);
+        var planeMat = new THREE.MeshStandardMaterial({
+          color: d.color, transparent: true, opacity: d.opacity,
+          roughness: 0.1, metalness: 0.5, side: THREE.DoubleSide, depthWrite: false
+        });
+        var plane = new THREE.Mesh(planeGeom, planeMat);
+        group.add(plane);
+        var edgeGeom = new THREE.EdgesGeometry(planeGeom);
+        var edgeMat = new THREE.LineBasicMaterial({ color: 0x90caf9, transparent: true, opacity: 0.4 });
+        var edges = new THREE.LineSegments(edgeGeom, edgeMat);
+        group.add(edges);
+        this.el.setObject3D('glass', group);
       }
     });
 
     /* ── Waterfall particles ───────────────────────────────────────── */
     AFRAME.registerComponent('waterfall', {
-      schema: { height: { default: 3 }, width: { default: 0.8 } },
+      schema: { height: { default: 1 }, width: { default: 0.5 } },
       init: function () {
-        this.particles = [];
         var d = this.data;
         var group = new THREE.Group();
+        this.particles = [];
         var geom = new THREE.SphereGeometry(0.04, 4, 3);
-        var mat = new THREE.MeshStandardMaterial({
-          color: 0x90caf9, transparent: true, opacity: 0.6,
-          roughness: 0.2, metalness: 0.1, depthWrite: false
+        var mat = new THREE.MeshBasicMaterial({
+          color: 0x90caf9, transparent: true, opacity: 0.6
         });
-        for (var i = 0; i < 40; i++) {
+        for (var i = 0; i < 30; i++) {
           var mesh = new THREE.Mesh(geom, mat.clone());
           var p = {
             mesh: mesh,
-            x: rand(-d.width/2, d.width/2),
+            x: rand(-d.width / 2, d.width / 2),
             y: rand(0, d.height),
-            z: rand(-0.1, 0.1),
-            speed: rand(2, 4)
+            z: rand(-0.05, 0.05),
+            speed: rand(1.5, 3)
           };
           mesh.position.set(p.x, p.y, p.z);
           group.add(mesh);
@@ -574,14 +694,14 @@
         }
         this.el.setObject3D('waterfall', group);
       },
-      tick: function(t, dt) {
+      tick: function (t, dt) {
         if (!dt) return;
         var sec = dt / 1000;
         var d = this.data;
         for (var i = 0; i < this.particles.length; i++) {
           var p = this.particles[i];
           p.y -= p.speed * sec;
-          if (p.y < 0) { p.y = d.height; p.x = rand(-d.width/2, d.width/2); }
+          if (p.y < 0) { p.y = d.height; p.x = rand(-d.width / 2, d.width / 2); }
           p.mesh.position.set(p.x, p.y, p.z);
           p.mesh.material.opacity = 0.3 + 0.3 * (p.y / d.height);
         }
@@ -599,46 +719,58 @@
       }
     });
 
-    /* ── Thumbstick locomotion (Quest 3S controllers) ──────────────── */
-    AFRAME.registerComponent('thumbstick-locomotion', {
+    /* ══════════════════════════════════════════════════════════════════
+     *  NAVIGATION & CONTROLLER SYSTEM
+     *  ────────────────────────────────────────────────────────────────
+     *  Works in THREE modes simultaneously:
+     *
+     *  1. DESKTOP BROWSER:
+     *     - WASD / Arrow keys for movement & turning
+     *     - Mouse look via A-Frame's look-controls
+     *     - Click labels for info popups
+     *
+     *  2. DESKTOP GAMEPAD (e.g. Xbox controller in Chrome):
+     *     - Left stick = move (camera-relative)
+     *     - Right stick = snap turn
+     *     - Polls navigator.getGamepads() every frame
+     *
+     *  3. META QUEST 3S (WebXR):
+     *     - oculus-touch-controls renders controller models
+     *     - thumbstickmoved events feed into same locomotion
+     *     - Custom VR laser (no conflicts with laser-controls)
+     *     - Haptic feedback on trigger
+     *     - Hand tracking supported
+     * ══════════════════════════════════════════════════════════════════ */
+
+    /* ── Unified locomotion ────────────────────────────────────────── */
+    AFRAME.registerComponent('locomotion-controls', {
       schema: {
-        speed: { default: 3 },
-        fly: { default: false },
-        deadzone: { default: 0.15 },
-        turnSpeed: { default: 2 },
+        speed: { default: 3.5 },
+        turnSpeed: { default: 60 },
         snapTurn: { default: true },
-        snapAngle: { default: 45 }
+        snapAngle: { default: 45 },
+        deadzone: { default: 0.15 },
+        fly: { default: false }
       },
       init: function () {
         this.moveVec = new THREE.Vector3();
         this.dirVec = new THREE.Vector3();
         this.camQuat = new THREE.Quaternion();
+        this.keys = {};
         this.stickL = { x: 0, y: 0 };
         this.stickR = { x: 0, y: 0 };
         this.snapReady = true;
-        this.setupControllerListeners();
-      },
-      setupControllerListeners: function () {
+
         var self = this;
-        var scene = this.el.sceneEl;
-        // Listen for thumbstick events from both controllers
-        scene.addEventListener('thumbstickmoved', function (evt) {
-          var hand = evt.target.getAttribute('tracked-controls') ||
-                     evt.target.getAttribute('oculus-touch-controls') ||
-                     evt.target.getAttribute('hand-controls') || {};
-          var handId = hand.hand || '';
-          // Also check component names
-          if (!handId) {
-            if (evt.target.id && evt.target.id.indexOf('left') !== -1) handId = 'left';
-            else if (evt.target.id && evt.target.id.indexOf('right') !== -1) handId = 'right';
-            else {
-              // Try to determine from controller index
-              var comps = evt.target.components;
-              if (comps && comps['oculus-touch-controls']) handId = comps['oculus-touch-controls'].data.hand;
-              else if (comps && comps['hand-controls']) handId = comps['hand-controls'].data.hand;
-            }
-          }
-          if (handId === 'left') {
+
+        // Keyboard listeners
+        document.addEventListener('keydown', function (e) { self.keys[e.code] = true; });
+        document.addEventListener('keyup', function (e) { self.keys[e.code] = false; });
+
+        // VR controller thumbstick events (from oculus-touch-controls)
+        this.el.sceneEl.addEventListener('thumbstickmoved', function (evt) {
+          var hand = self.resolveHand(evt.target);
+          if (hand === 'left') {
             self.stickL.x = evt.detail.x;
             self.stickL.y = evt.detail.y;
           } else {
@@ -647,24 +779,51 @@
           }
         });
       },
+
+      resolveHand: function (el) {
+        var comps = el.components || {};
+        if (comps['oculus-touch-controls']) return comps['oculus-touch-controls'].data.hand;
+        if (comps['hand-controls']) return comps['hand-controls'].data.hand;
+        if (comps['tracked-controls']) return comps['tracked-controls'].data.hand || '';
+        if (el.id && el.id.indexOf('left') !== -1) return 'left';
+        if (el.id && el.id.indexOf('right') !== -1) return 'right';
+        return 'right';
+      },
+
       tick: function (t, dt) {
-        if (!dt || !this.el.sceneEl.is('vr-mode')) return;
+        if (!dt) return;
         var d = this.data;
         var sec = dt / 1000;
         var rig = this.el;
         var cam = this.el.sceneEl.camera;
         if (!cam) return;
-        // ── LEFT STICK: movement (forward/back/strafe) ──
-        var lx = this.stickL.x;
-        var ly = this.stickL.y;
-        if (Math.abs(lx) > d.deadzone || Math.abs(ly) > d.deadzone) {
-          // Get camera world direction
+        var inVR = this.el.sceneEl.is('vr-mode');
+
+        // Poll desktop gamepads when NOT in VR
+        if (!inVR) this.pollGamepads();
+
+        // ── KEYBOARD INPUT (desktop only) ──
+        var kx = 0, kz = 0, kturn = 0;
+        if (!inVR) {
+          if (this.keys['KeyW'] || this.keys['ArrowUp']) kz = -1;
+          if (this.keys['KeyS'] || this.keys['ArrowDown']) kz = 1;
+          if (this.keys['KeyA'] || this.keys['KeyQ']) kx = -1;
+          if (this.keys['KeyD'] || this.keys['KeyE']) kx = 1;
+          if (this.keys['ArrowLeft']) kturn = 1;
+          if (this.keys['ArrowRight']) kturn = -1;
+        }
+
+        // ── COMBINED MOVEMENT (keyboard + sticks) ──
+        var moveX = kx + this.stickL.x;
+        var moveZ = kz + this.stickL.y;
+
+        if (Math.abs(moveX) > d.deadzone || Math.abs(moveZ) > d.deadzone) {
           cam.getWorldQuaternion(this.camQuat);
-          this.dirVec.set(lx, 0, ly);
+          this.dirVec.set(moveX, 0, moveZ);
           this.dirVec.applyQuaternion(this.camQuat);
           if (!d.fly) this.dirVec.y = 0;
           this.dirVec.normalize();
-          var magnitude = Math.min(1, Math.sqrt(lx * lx + ly * ly));
+          var magnitude = Math.min(1, Math.sqrt(moveX * moveX + moveZ * moveZ));
           this.dirVec.multiplyScalar(d.speed * sec * magnitude);
           var pos = rig.getAttribute('position');
           rig.setAttribute('position', {
@@ -673,28 +832,58 @@
             z: pos.z + this.dirVec.z
           });
         }
-        // ── RIGHT STICK: snap turn (horizontal) ──
-        var rx = this.stickR.x;
+
+        // ── KEYBOARD SMOOTH TURN ──
+        if (Math.abs(kturn) > 0) {
+          var rot = rig.getAttribute('rotation');
+          rig.setAttribute('rotation', {
+            x: rot.x,
+            y: rot.y + kturn * d.turnSpeed * sec,
+            z: rot.z
+          });
+        }
+
+        // ── STICK SNAP TURN (VR + gamepad) ──
+        var turnX = this.stickR.x;
         if (d.snapTurn) {
-          if (Math.abs(rx) > 0.6 && this.snapReady) {
+          if (Math.abs(turnX) > 0.6 && this.snapReady) {
             var rot = rig.getAttribute('rotation');
-            var angle = rx > 0 ? -d.snapAngle : d.snapAngle;
+            var angle = turnX > 0 ? -d.snapAngle : d.snapAngle;
             rig.setAttribute('rotation', { x: rot.x, y: rot.y + angle, z: rot.z });
             this.snapReady = false;
-          } else if (Math.abs(rx) < 0.3) {
+          } else if (Math.abs(turnX) < 0.3) {
             this.snapReady = true;
           }
-        } else {
-          if (Math.abs(rx) > d.deadzone) {
-            var rot = rig.getAttribute('rotation');
-            rig.setAttribute('rotation', { x: rot.x, y: rot.y - rx * d.turnSpeed, z: rot.z });
+        } else if (Math.abs(turnX) > d.deadzone) {
+          var rot = rig.getAttribute('rotation');
+          rig.setAttribute('rotation', {
+            x: rot.x,
+            y: rot.y - turnX * d.turnSpeed * sec,
+            z: rot.z
+          });
+        }
+      },
+
+      pollGamepads: function () {
+        var gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        for (var i = 0; i < gamepads.length; i++) {
+          var gp = gamepads[i];
+          if (!gp) continue;
+          if (gp.axes.length >= 2) {
+            this.stickL.x = gp.axes[0];
+            this.stickL.y = gp.axes[1];
           }
+          if (gp.axes.length >= 4) {
+            this.stickR.x = gp.axes[2];
+            this.stickR.y = gp.axes[3];
+          }
+          break;
         }
       }
     });
 
-    /* ── Controller laser pointer ──────────────────────────────────── */
-    AFRAME.registerComponent('controller-laser', {
+    /* ── VR laser pointer (visible only in VR)  ────────────────────── */
+    AFRAME.registerComponent('vr-laser', {
       schema: {
         color: { default: '#ffffff' },
         length: { default: 5 },
@@ -702,7 +891,8 @@
       },
       init: function () {
         var d = this.data;
-        // Laser beam
+        var group = new THREE.Group();
+        // Beam
         var laserGeom = new THREE.CylinderGeometry(0.002, 0.002, d.length, 4);
         laserGeom.translate(0, -d.length / 2, 0);
         laserGeom.rotateX(Math.PI / 2);
@@ -710,72 +900,70 @@
           color: d.color, transparent: true, opacity: d.opacity, depthWrite: false
         });
         this.laser = new THREE.Mesh(laserGeom, laserMat);
-        this.el.setObject3D('laser', this.laser);
-
-        // Dot at end of laser
-        var dotGeom = new THREE.SphereGeometry(0.015, 8, 6);
+        group.add(this.laser);
+        // Dot
+        var dotGeom = new THREE.SphereGeometry(0.012, 8, 6);
         var dotMat = new THREE.MeshBasicMaterial({
           color: d.color, transparent: true, opacity: 0.8, depthWrite: false
         });
         this.dot = new THREE.Mesh(dotGeom, dotMat);
         this.dot.position.set(0, 0, -d.length);
-        this.el.setObject3D('laser-dot', this.dot);
+        group.add(this.dot);
+        this.group = group;
+        this.el.setObject3D('vr-laser', group);
+        group.visible = false;
       },
       tick: function () {
-        // Visibility only in VR
         var inVR = this.el.sceneEl.is('vr-mode');
-        if (this.laser) this.laser.visible = inVR;
-        if (this.dot) this.dot.visible = inVR;
+        this.group.visible = inVR;
+        if (inVR) {
+          var raycaster = this.el.components.raycaster;
+          if (raycaster && raycaster.intersections && raycaster.intersections.length > 0) {
+            var dist = raycaster.intersections[0].distance;
+            this.dot.position.set(0, 0, -dist);
+            this.laser.scale.set(1, 1, dist / this.data.length);
+          } else {
+            this.dot.position.set(0, 0, -this.data.length);
+            this.laser.scale.set(1, 1, 1);
+          }
+        }
       }
     });
 
-    /* ── Controller haptic feedback on trigger ─────────────────────── */
-    AFRAME.registerComponent('controller-haptics', {
+    /* ── VR haptic feedback ────────────────────────────────────────── */
+    AFRAME.registerComponent('vr-haptics', {
       init: function () {
-        var self = this;
-        this.el.addEventListener('triggerdown', function () {
-          var tc = self.el.components['tracked-controls'];
-          if (tc && tc.controller && tc.controller.hapticActuators &&
-              tc.controller.hapticActuators.length > 0) {
-            tc.controller.hapticActuators[0].pulse(0.4, 50);
-          }
-          // WebXR haptics
-          if (tc && tc.controller && tc.controller.gamepad &&
-              tc.controller.gamepad.hapticActuators) {
-            var actuators = tc.controller.gamepad.hapticActuators;
-            if (actuators.length > 0) actuators[0].pulse(0.4, 50);
+        var el = this.el;
+        el.addEventListener('triggerdown', function () {
+          var tc = el.components['tracked-controls'];
+          if (tc && tc.controller) {
+            var gp = tc.controller.gamepad || tc.controller;
+            if (gp && gp.hapticActuators && gp.hapticActuators.length > 0) {
+              gp.hapticActuators[0].pulse(0.4, 80);
+            }
+            if (tc.controller.hapticActuators && tc.controller.hapticActuators.length > 0) {
+              tc.controller.hapticActuators[0].pulse(0.4, 80);
+            }
           }
         });
       }
     });
 
-    /* ── Keyboard locomotion for desktop VR emulation ──────────────── */
-    AFRAME.registerComponent('keyboard-locomotion', {
-      schema: {
-        speed: { default: 3 },
-        turnSpeed: { default: 60 }
-      },
+    /* ── Interactive label click handler ────────────────────────────── */
+    AFRAME.registerComponent('info-label', {
+      schema: { key: { type: 'string', default: '' } },
       init: function () {
-        this.keys = {};
         var self = this;
-        document.addEventListener('keydown', function(e) { self.keys[e.code] = true; });
-        document.addEventListener('keyup', function(e) { self.keys[e.code] = false; });
-        this.moveDir = new THREE.Vector3();
-        this.camQuat = new THREE.Quaternion();
-      },
-      tick: function (t, dt) {
-        if (!dt) return;
-        // Only active outside VR (wasd-controls handles desktop, this is supplementary)
-        if (this.el.sceneEl.is('vr-mode')) return;
-        // Arrow keys for rotation
-        var sec = dt / 1000;
-        var rot = this.el.getAttribute('rotation');
-        if (this.keys['ArrowLeft']) {
-          this.el.setAttribute('rotation', { x: rot.x, y: rot.y + this.data.turnSpeed * sec, z: rot.z });
-        }
-        if (this.keys['ArrowRight']) {
-          this.el.setAttribute('rotation', { x: rot.x, y: rot.y - this.data.turnSpeed * sec, z: rot.z });
-        }
+        this.el.classList.add('clickable');
+        this.el.addEventListener('click', function () {
+          showInfoPopup(self.data.key);
+        });
+        this.el.addEventListener('mouseenter', function () {
+          self.el.setAttribute('scale', '1.1 1.1 1.1');
+        });
+        this.el.addEventListener('mouseleave', function () {
+          self.el.setAttribute('scale', '1 1 1');
+        });
       }
     });
 
@@ -784,19 +972,18 @@
       init: function () {
         var overlay = document.getElementById('loading-overlay');
         if (overlay) {
-          setTimeout(function() {
+          setTimeout(function () {
             overlay.classList.add('fade-out');
-            setTimeout(function() { overlay.remove(); }, 900);
+            setTimeout(function () { overlay.remove(); }, 900);
           }, 2000);
         }
       }
     });
 
-    /* ── Cabin / small house ───────────────────────────────────────── */
+    /* ── Cabin ─────────────────────────────────────────────────────── */
     AFRAME.registerComponent('cabin', {
       init: function () {
         var group = new THREE.Group();
-        // Walls
         var wallGeom = new THREE.BoxGeometry(1.6, 1.2, 1.4);
         var wallMat = new THREE.MeshStandardMaterial({
           color: 0x8d6e63, roughness: 0.9, metalness: 0.05, flatShading: true
@@ -805,17 +992,14 @@
         walls.position.y = 0.6;
         walls.castShadow = true; walls.receiveShadow = true;
         group.add(walls);
-        // Roof
         var roofGeom = new THREE.ConeGeometry(1.3, 0.8, 4);
         var roofMat = new THREE.MeshStandardMaterial({
           color: 0xc62828, roughness: 0.8, metalness: 0.1, flatShading: true
         });
         var roof = new THREE.Mesh(roofGeom, roofMat);
-        roof.position.y = 1.6;
-        roof.rotation.y = Math.PI / 4;
+        roof.position.y = 1.6; roof.rotation.y = Math.PI / 4;
         roof.castShadow = true;
         group.add(roof);
-        // Door
         var doorGeom = new THREE.PlaneGeometry(0.35, 0.6);
         var doorMat = new THREE.MeshStandardMaterial({
           color: 0x4e342e, roughness: 0.9, side: THREE.DoubleSide
@@ -823,7 +1007,6 @@
         var door = new THREE.Mesh(doorGeom, doorMat);
         door.position.set(0, 0.35, 0.71);
         group.add(door);
-        // Window
         var winGeom = new THREE.PlaneGeometry(0.25, 0.25);
         var winMat = new THREE.MeshStandardMaterial({
           color: 0xbbdefb, roughness: 0.1, metalness: 0.5, side: THREE.DoubleSide
@@ -834,7 +1017,6 @@
         var win2 = new THREE.Mesh(winGeom, winMat.clone());
         win2.position.set(-0.45, 0.7, 0.71);
         group.add(win2);
-        // Chimney
         var chimGeom = new THREE.BoxGeometry(0.2, 0.6, 0.2);
         var chimMat = new THREE.MeshStandardMaterial({
           color: 0x795548, roughness: 0.9, flatShading: true
@@ -846,7 +1028,7 @@
       }
     });
 
-    /* ── Fence posts ───────────────────────────────────────────────── */
+    /* ── Fence ─────────────────────────────────────────────────────── */
     AFRAME.registerComponent('fence', {
       schema: { length: { default: 6 }, posts: { type: 'int', default: 6 } },
       init: function () {
@@ -857,9 +1039,7 @@
           color: 0x795548, roughness: 0.9, metalness: 0.05
         });
         var railGeom = new THREE.CylinderGeometry(0.02, 0.02, d.length / d.posts, 4);
-        var railMat = new THREE.MeshStandardMaterial({
-          color: 0x8d6e63, roughness: 0.9
-        });
+        var railMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.9 });
         for (var i = 0; i < d.posts; i++) {
           var post = new THREE.Mesh(postGeom, postMat);
           var x = (i / (d.posts - 1)) * d.length - d.length / 2;
@@ -881,30 +1061,25 @@
       }
     });
 
-    /* ── Dock/pier ─────────────────────────────────────────────────── */
+    /* ── Dock ──────────────────────────────────────────────────────── */
     AFRAME.registerComponent('dock', {
       init: function () {
         var group = new THREE.Group();
         var plankMat = new THREE.MeshStandardMaterial({
           color: 0x8d6e63, roughness: 0.9, metalness: 0.05
         });
-        // Planks
         for (var i = 0; i < 8; i++) {
           var plank = new THREE.Mesh(
-            new THREE.BoxGeometry(1.2, 0.06, 0.22),
-            plankMat
+            new THREE.BoxGeometry(1.2, 0.06, 0.22), plankMat
           );
           plank.position.set(0, 0.4, -i * 0.28);
           plank.castShadow = true;
           group.add(plank);
         }
-        // Support pillars
         var pillarGeom = new THREE.CylinderGeometry(0.06, 0.07, 0.8, 5);
-        var pillarMat = new THREE.MeshStandardMaterial({
-          color: 0x5d4037, roughness: 0.9
-        });
+        var pillarMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
         var pillars = [[-0.5, 0], [0.5, 0], [-0.5, -1.2], [0.5, -1.2], [-0.5, -2], [0.5, -2]];
-        pillars.forEach(function(p) {
+        pillars.forEach(function (p) {
           var pillar = new THREE.Mesh(pillarGeom, pillarMat);
           pillar.position.set(p[0], 0.1, p[1]);
           group.add(pillar);
@@ -930,7 +1105,6 @@
     background="color: #87CEEB"
   >
     <a-assets id="scene-assets" timeout="15000">
-      <!-- 3D Models from free CDN sources -->
       <a-asset-item id="duck-model"
         src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Duck/glTF-Binary/Duck.glb"></a-asset-item>
     </a-assets>
@@ -949,60 +1123,56 @@
     <a-light type="hemisphere" color="#87ceeb" groundColor="#4a7c3f" intensity="0.35"></a-light>
     <a-light type="directional" color="#c4d8e8" intensity="0.25" position="-6 8 4"></a-light>
 
-    <!-- ── Camera Rig with Quest 3S Controller Support ────────── -->
+    <!-- ═══════════════════════════════════════════════════════════════
+         PLAYER RIG — unified locomotion for Desktop + Gamepad + VR
+         ═══════════════════════════════════════════════════════════════ -->
     <a-entity id="rig" position="0 0 14"
-              thumbstick-locomotion="speed:3; snapTurn:true; snapAngle:45"
-              keyboard-locomotion="speed:3">
+              locomotion-controls="speed:3.5; snapTurn:true; snapAngle:45">
 
-      <!-- Camera (desktop + VR headset) -->
+      <!-- Camera (auto-switches between desktop & VR headset) -->
       <a-camera id="head" position="0 1.6 0"
                 look-controls="pointerLockEnabled:false"
-                wasd-controls="acceleration:30">
-        <!-- Desktop cursor (hidden in VR) -->
+                wasd-controls="enabled:false">
+        <!-- Desktop mouse ray cursor -->
         <a-entity id="desktop-cursor"
                   cursor="fuse:false; rayOrigin:mouse"
-                  raycaster="objects:.clickable; far:30">
-        </a-entity>
-        <a-entity id="gaze-cursor"
-                  cursor="fuse:false"
-                  position="0 0 -1"
-                  geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-                  material="shader:flat; color:#fff; opacity:0.6; depthTest:false"></a-entity>
+                  raycaster="objects:.clickable; far:30"></a-entity>
+        <!-- Gaze reticle (visible as small dot in center) -->
+        <a-entity id="gaze-reticle" position="0 0 -1"
+                  geometry="primitive:ring; radiusInner:0.008; radiusOuter:0.013"
+                  material="shader:flat; color:#ffffff; opacity:0.5;
+                            depthTest:false; transparent:true"></a-entity>
       </a-camera>
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!--  LEFT CONTROLLER (Meta Quest 3S)                          -->
-      <!--  Thumbstick → movement (handled by thumbstick-locomotion) -->
-      <!--  Trigger → interact / select                              -->
-      <!--  Grip → grab (future use)                                 -->
-      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- ════════════════════════════════════════════════════════════
+           LEFT CONTROLLER — Meta Quest 3S (Touch Plus)
+           Thumbstick → movement (via locomotion-controls)
+           Trigger → select / interact
+           ════════════════════════════════════════════════════════════ -->
       <a-entity id="left-controller"
                 oculus-touch-controls="hand:left; model:true"
-                controller-laser="color:#42a5f5; length:4; opacity:0.35"
-                controller-haptics
-                raycaster="objects:.clickable; far:5; lineColor:#42a5f5; lineOpacity:0.4;
-                           showLine:true; origin:0 0 0; direction:0 0 -1"
-                laser-controls="hand:left; model:true">
-      </a-entity>
+                vr-laser="color:#42a5f5; length:5; opacity:0.35"
+                vr-haptics
+                raycaster="objects:.clickable; far:8;
+                           showLine:false;
+                           origin:0 0 0; direction:0 0 -1"></a-entity>
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!--  RIGHT CONTROLLER (Meta Quest 3S)                         -->
-      <!--  Thumbstick → snap turn (handled by thumbstick-locomotion)-->
-      <!--  Trigger → interact / select                              -->
-      <!--  A/B buttons → (future use)                               -->
-      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- ════════════════════════════════════════════════════════════
+           RIGHT CONTROLLER — Meta Quest 3S (Touch Plus)
+           Thumbstick → snap turn (via locomotion-controls)
+           Trigger → select / interact
+           ════════════════════════════════════════════════════════════ -->
       <a-entity id="right-controller"
                 oculus-touch-controls="hand:right; model:true"
-                controller-laser="color:#ef5350; length:4; opacity:0.35"
-                controller-haptics
-                raycaster="objects:.clickable; far:5; lineColor:#ef5350; lineOpacity:0.4;
-                           showLine:true; origin:0 0 0; direction:0 0 -1"
-                laser-controls="hand:right; model:true">
-      </a-entity>
+                vr-laser="color:#ef5350; length:5; opacity:0.35"
+                vr-haptics
+                raycaster="objects:.clickable; far:8;
+                           showLine:false;
+                           origin:0 0 0; direction:0 0 -1"></a-entity>
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!--  HAND TRACKING (Quest 3S native hand tracking)            -->
-      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- ════════════════════════════════════════════════════════════
+           HAND TRACKING — native Quest 3S hand tracking
+           ════════════════════════════════════════════════════════════ -->
       <a-entity id="left-hand"
                 hand-tracking-controls="hand:left; modelColor:#42a5f5; modelStyle:mesh"></a-entity>
       <a-entity id="right-hand"
@@ -1015,14 +1185,11 @@
     <a-circle position="0 -0.01 0" rotation="-90 0 0" radius="35"
               material="color:#3d7a35; roughness:0.95; metalness:0; side:double"
               shadow="receive:true"></a-circle>
-    <!-- Sandy shore ring -->
     <a-circle position="0 0.01 0" rotation="-90 0 0" radius="5.8"
               material="color:#c4a76c; roughness:0.9; metalness:0; side:double"></a-circle>
-    <!-- Inner shore -->
     <a-circle position="0 0.015 0" rotation="-90 0 0" radius="5.0"
-              material="color:#b39b5c; roughness:0.9; metalness:0; side:double; opacity:0.6; transparent:true"></a-circle>
-
-    <!-- Ground hills -->
+              material="color:#b39b5c; roughness:0.9; metalness:0; side:double;
+                        opacity:0.6; transparent:true"></a-circle>
     <a-entity position="-8 0 5">
       <a-sphere radius="4" material="color:#3a7530; roughness:0.95; metalness:0; flatShading:true"
                 scale="1.5 0.12 1.2" shadow="receive:true"></a-sphere>
@@ -1035,7 +1202,6 @@
       <a-sphere radius="3" material="color:#3e7d32; roughness:0.95; metalness:0; flatShading:true"
                 scale="1.6 0.09 1.3" shadow="receive:true"></a-sphere>
     </a-entity>
-    <!-- Dirt path -->
     <a-entity position="0 0.02 8" rotation="-90 0 0">
       <a-plane width="1.2" height="5"
                material="color:#a89060; roughness:0.9; metalness:0; side:double;
@@ -1054,11 +1220,9 @@
       <a-circle position="0 -0.08 0" rotation="-90 0 0" radius="4.3"
                 material="color:#0d47a1; roughness:0.3; metalness:0.4;
                           opacity:0.6; transparent:true; side:double"></a-circle>
-      <!-- Specular highlight -->
       <a-circle position="1.5 0.03 -1" rotation="-88 15 0" radius="1"
                 material="shader:flat; color:#b3e5fc; opacity:0.15;
                           transparent:true; side:double; depthWrite:false"></a-circle>
-      <!-- Shore rocks -->
       <a-entity position="4.2 0.04 1" rock="size:0.15; color:#9e9e9e"></a-entity>
       <a-entity position="3.8 0.04 2.5" rock="size:0.12; color:#8d8d8d"></a-entity>
       <a-entity position="-4.1 0.04 0.5" rock="size:0.18; color:#a0a0a0"></a-entity>
@@ -1066,19 +1230,18 @@
       <a-entity position="-3.5 0.04 3" rock="size:0.13; color:#959595"></a-entity>
     </a-entity>
 
-    <!-- Duck 3D model floating on water -->
+    <!-- Ducks floating on water -->
     <a-entity gltf-model="#duck-model" position="2 0.08 -1.5"
               scale="0.012 0.012 0.012" rotation="0 -45 0"
               water-animation="speed:0.3; amplitude:0.02"
               shadow="cast:true"></a-entity>
-    <!-- Second duck -->
     <a-entity gltf-model="#duck-model" position="-1.5 0.08 2"
               scale="0.01 0.01 0.01" rotation="0 130 0"
               water-animation="speed:0.35; amplitude:0.018"
               shadow="cast:true"></a-entity>
 
-    <!-- Collection Label -->
-    <a-entity position="0 1.0 5.3" billboard>
+    <!-- Collection Label (clickable) -->
+    <a-entity position="0 1.0 5.3" billboard info-label="key:collection" class="clickable">
       <a-entity glass-panel="width:3; height:0.55; color:#e3f2fd; opacity:0.6" position="0 0 -0.01"></a-entity>
       <a-entity text="value:💧 COLLECTION; align:center; color:#0d47a1;
                        width:5; font:mozillavr; anchor:center"></a-entity>
@@ -1087,12 +1250,12 @@
     <!-- ============================================================ -->
     <!--  RIVERS / RUNOFF                                              -->
     <!-- ============================================================ -->
-    <a-entity river="width:0.5; points:-12,8; -8,5; -5.5,3; -4.2,1.5; -3.5,0.5"></a-entity>
-    <a-entity river="width:0.4; points:14,6; 10,4; 7,2.5; 5,1; 4,0.3"></a-entity>
+    <a-entity river="width:0.5; points:-12,8|-8,5|-5.5,3|-4.2,1.5|-3.5,0.5"></a-entity>
+    <a-entity river="width:0.4; points:14,6|10,4|7,2.5|5,1|4,0.3"></a-entity>
     <a-entity position="-3.8 0.5 1" waterfall="height:0.8; width:0.5"></a-entity>
 
-    <!-- Runoff label -->
-    <a-entity position="-7 1.0 4" billboard>
+    <!-- Runoff label (clickable) -->
+    <a-entity position="-7 1.0 4" billboard info-label="key:runoff" class="clickable">
       <a-entity glass-panel="width:2.2; height:0.5; color:#e3f2fd; opacity:0.5" position="0 0 -0.01"></a-entity>
       <a-entity text="value:🌊 RUNOFF; align:center; color:#0d47a1;
                        width:4; font:mozillavr; anchor:center"></a-entity>
@@ -1118,7 +1281,8 @@
     <!-- ============================================================ -->
     <a-entity id="evaporation" position="0 0 0"
               evaporation-system="count:70; radius:4; minY:0.2; maxY:9; speed:0.55"></a-entity>
-    <a-entity position="5.5 4.5 0" billboard>
+    <!-- Evaporation label (clickable) -->
+    <a-entity position="5.5 4.5 0" billboard info-label="key:evaporation" class="clickable">
       <a-entity glass-panel="width:3; height:0.55; color:#e1f5fe; opacity:0.55" position="0 0 -0.01"></a-entity>
       <a-entity text="value:⬆ EVAPORATION; align:center; color:#01579b;
                        width:5; font:mozillavr; anchor:center"></a-entity>
@@ -1137,14 +1301,13 @@
               cloud-float="amplitude:0.2; speed:0.18; driftX:0.05; offset:1.5"></a-entity>
     <a-entity position="5 10.3 -4" cloud-mesh="scale:1.2; density:12; darkBottom:true"
               cloud-float="amplitude:0.22; speed:0.28; driftX:0.09; offset:3"></a-entity>
-    <!-- Distant -->
     <a-entity position="-10 11 -12" cloud-mesh="scale:2.5; density:15; darkBottom:false"
               cloud-float="amplitude:0.15; speed:0.1; driftX:0.03; offset:5"></a-entity>
     <a-entity position="12 11.5 -10" cloud-mesh="scale:2; density:12; darkBottom:false"
               cloud-float="amplitude:0.18; speed:0.12; driftX:0.04; offset:6"></a-entity>
 
-    <!-- Condensation label -->
-    <a-entity position="0 12.5 -1" billboard>
+    <!-- Condensation label (clickable) -->
+    <a-entity position="0 12.5 -1" billboard info-label="key:condensation" class="clickable">
       <a-entity glass-panel="width:3.2; height:0.55; color:#eceff1; opacity:0.55" position="0 0 -0.01"></a-entity>
       <a-entity text="value:☁️ CONDENSATION; align:center; color:#37474f;
                        width:6; font:mozillavr; anchor:center"></a-entity>
@@ -1155,7 +1318,8 @@
     <!-- ============================================================ -->
     <a-entity id="rain" position="0 0 0"
               rain-system="count:150; areaX:12; areaZ:12; minY:0.05; maxY:10; speed:7"></a-entity>
-    <a-entity position="-5.5 6 1.5" billboard>
+    <!-- Precipitation label (clickable) -->
+    <a-entity position="-5.5 6 1.5" billboard info-label="key:precipitation" class="clickable">
       <a-entity glass-panel="width:3.2; height:0.55; color:#e8eaf6; opacity:0.55" position="0 0 -0.01"></a-entity>
       <a-entity text="value:⬇ PRECIPITATION; align:center; color:#1a237e;
                        width:5; font:mozillavr; anchor:center"></a-entity>
@@ -1169,26 +1333,22 @@
     <a-entity cycle-arrow="from:-6 0.5 5; to:-4 0.3 1; color:#1e88e5; midHeight:1"></a-entity>
 
     <!-- ============================================================ -->
-    <!--  TREES (procedural low-poly, varied types)                    -->
+    <!--  TREES                                                        -->
     <!-- ============================================================ -->
-    <!-- Round trees -->
     <a-entity position="-7 0 6" tree="trunkHeight:2.2; crownType:round; crownColor:#2e7d32; crownSize:1.3"></a-entity>
     <a-entity position="-9 0 4" tree="trunkHeight:1.8; crownType:round; crownColor:#388e3c; crownSize:1.0"></a-entity>
     <a-entity position="-6 0 9" tree="trunkHeight:2.5; crownType:round; crownColor:#33691e; crownSize:1.4"></a-entity>
     <a-entity position="8 0 7" tree="trunkHeight:2.0; crownType:round; crownColor:#2e7d32; crownSize:1.2"></a-entity>
     <a-entity position="10 0 5" tree="trunkHeight:2.8; crownType:round; crownColor:#1b5e20; crownSize:1.5"></a-entity>
-    <!-- Conifers -->
     <a-entity position="-10 0 -3" tree="trunkHeight:2.5; crownType:cone; crownColor:#1b5e20; crownSize:0.9"></a-entity>
     <a-entity position="-12 0 0" tree="trunkHeight:3.0; crownType:cone; crownColor:#2e7d32; crownSize:1.0"></a-entity>
     <a-entity position="11 0 -2" tree="trunkHeight:2.8; crownType:cone; crownColor:#1b5e20; crownSize:1.1"></a-entity>
     <a-entity position="9 0 -5" tree="trunkHeight:2.2; crownType:layered; crownColor:#388e3c; crownSize:0.9"></a-entity>
-    <!-- Distant trees -->
     <a-entity position="-14 0 8" tree="trunkHeight:3.0; crownType:round; crownColor:#2e7d32; crownSize:1.6"></a-entity>
     <a-entity position="14 0 9" tree="trunkHeight:2.5; crownType:cone; crownColor:#1b5e20; crownSize:1.3"></a-entity>
     <a-entity position="-11 0 11" tree="trunkHeight:2.2; crownType:layered; crownColor:#33691e; crownSize:1.0"></a-entity>
     <a-entity position="6 0 11" tree="trunkHeight:1.8; crownType:round; crownColor:#43a047; crownSize:0.9"></a-entity>
     <a-entity position="13 0 3" tree="trunkHeight:2.6; crownType:round; crownColor:#388e3c; crownSize:1.2"></a-entity>
-    <!-- Extra background trees -->
     <a-entity position="-15 0 -6" tree="trunkHeight:3.2; crownType:cone; crownColor:#1b5e20; crownSize:1.1"></a-entity>
     <a-entity position="16 0 -4" tree="trunkHeight:2.9; crownType:layered; crownColor:#2e7d32; crownSize:1.0"></a-entity>
 
@@ -1205,14 +1365,13 @@
     <a-entity position="-7.2 0.2 -6.5" rock="size:0.4; color:#757575" rotation="10 -15 0"></a-entity>
 
     <!-- ============================================================ -->
-    <!--  MOUNTAINS (procedural low-poly with snow)                    -->
+    <!--  MOUNTAINS                                                    -->
     <!-- ============================================================ -->
     <a-entity position="-12 0 -16" mountain="radius:7; height:12; segments:7; snowLine:0.65; color:#5f7a61"></a-entity>
     <a-entity position="0 0 -20" mountain="radius:9; height:14; segments:8; snowLine:0.7; color:#4e6e52"></a-entity>
     <a-entity position="12 0 -18" mountain="radius:8; height:11; segments:7; snowLine:0.68; color:#6d8b74"></a-entity>
     <a-entity position="-20 0 -14" mountain="radius:6; height:9; segments:6; snowLine:0.72; color:#587d5c"></a-entity>
     <a-entity position="20 0 -15" mountain="radius:7; height:10; segments:6; snowLine:0.7; color:#5a7b5e"></a-entity>
-    <!-- Foothills -->
     <a-entity position="-7 0 -10" mountain="radius:4; height:5; segments:5; snowLine:0.9; color:#6b8c6e"></a-entity>
     <a-entity position="8 0 -11" mountain="radius:3.5; height:4; segments:5; snowLine:0.95; color:#7a9972"></a-entity>
 
@@ -1227,7 +1386,7 @@
     <a-entity position="-8 0 8.5" rotation="0 15 0" fence="length:5; posts:5"></a-entity>
 
     <!-- ============================================================ -->
-    <!--  DOCK on lake shore                                           -->
+    <!--  DOCK                                                         -->
     <!-- ============================================================ -->
     <a-entity position="0 0 5.2" rotation="0 0 0" dock></a-entity>
 
@@ -1254,7 +1413,6 @@
       <a-cylinder radius="0.02" height="0.26" position="0 0.13 0" material="color:#66bb6a; roughness:0.8"></a-cylinder>
       <a-sphere radius="0.05" position="0 0.28 0" material="color:#f44336; roughness:0.7"></a-sphere>
     </a-entity>
-    <!-- Grass tufts -->
     <a-entity position="-4 0 6">
       <a-cone radius-bottom="0.15" radius-top="0" height="0.4" position="0 0.2 0"
               material="color:#558b2f; roughness:0.9; flatShading:true" rotation="0 0 8"></a-cone>
